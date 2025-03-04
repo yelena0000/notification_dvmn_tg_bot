@@ -1,15 +1,17 @@
+import logging
+
 import requests
 import telegram
 from environs import Env
 
+
+logging.basicConfig(level=logging.INFO)
 
 def get_new_reviews(token, last_timestamp):
     """Получает новые проверки от Devman API."""
     url = 'https://dvmn.org/api/long_polling/'
     headers = {'Authorization': f'Token {token}'}
     params = {'timestamp': last_timestamp} if last_timestamp else {}
-
-    print(f'Отправляю запрос с params: {params}')
 
     response = requests.get(url, headers=headers, params=params, timeout=5)
     response.raise_for_status()
@@ -81,10 +83,12 @@ def main():
                 user_name
             )
 
+
         except requests.Timeout:
-            print('error: Request timed out')
+            logging.error('Request timed out during polling')
+
         except requests.exceptions.ConnectionError:
-            print('error: Connection lost')
+            logging.error('Connection lost during polling')
 
 
 if __name__ == '__main__':
