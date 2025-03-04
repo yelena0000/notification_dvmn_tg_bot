@@ -32,8 +32,10 @@ def send_notification_to_tg(response_content, bot, chat_id, last_timestamp, user
             is_negative = attempt['is_negative']
 
             result = '❌ Работа не принята.' if is_negative else '✅ Работа принята!'
-            verdict = ('К сожалению, работа не принята и требует улучшений.' if is_negative
-                       else 'Работа принята!')
+            verdict = (
+                'К сожалению, работа не принята и требует улучшений.' if is_negative
+                else 'Работа принята!'
+            )
 
             message = (f'{result}\n\n{user_name}, преподаватель проверил урок: '
                        f'"{lesson_title}"\n🔗 {lesson_url}\n{verdict}')
@@ -53,18 +55,24 @@ def main():
     tg_chat_id = env.int('TG_CHAT_ID')
 
     if not devman_token or not tg_bot_token:
-        raise ValueError('Tokens cannot be empty!')
+        raise ValueError(
+            'Tokens cannot be empty!'
+        )
 
     if not isinstance(tg_chat_id, int) or tg_chat_id < 0:
-        raise ValueError('Invalid TG_CHAT_ID, it must be a positive integer for personal chat')
+        raise ValueError(
+            'Invalid TG_CHAT_ID, it must be a positive integer for personal chat'
+        )
 
     bot = telegram.Bot(token=tg_bot_token)
 
     user = bot.get_chat(tg_chat_id)
     user_name = user.first_name
 
-    welcome_message = (f'👋 Привет, {user_name}! Я слежу за проверками твоих работ. '
-                       f'Информацию о проверках я отправлю, когда преподаватель проверит твой урок.')
+    welcome_message = (
+        f'👋 Привет, {user_name}! Я слежу за проверками твоих работ. '
+        f'Информацию о проверках я отправлю, когда преподаватель проверит твой урок.'
+    )
     bot.send_message(chat_id=tg_chat_id, text=welcome_message)
 
     last_timestamp = None
@@ -82,7 +90,6 @@ def main():
                 last_timestamp,
                 user_name
             )
-
 
         except requests.Timeout:
             logging.error('Request timed out during polling')
