@@ -15,9 +15,11 @@ def create_verdict_message(user_name, lesson_title, lesson_url, is_negative):
     result = '❌ Работа не принята.' if is_negative else '✅ Работа принята!'
     verdict = ('К сожалению, работа не принята и требует улучшений.'
                if is_negative else 'Работа принята!')
-
-    return (f'{result}\n\n{user_name}, преподаватель проверил урок: '
+    
+    verdict_message = (f'{result}\n\n{user_name}, преподаватель проверил урок: '
             f'"{lesson_title}"\n🔗 {lesson_url}\n{verdict}')
+
+    return verdict_message
 
 
 def get_new_reviews(token, last_timestamp):
