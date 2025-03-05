@@ -7,7 +7,7 @@ import telegram
 from dotenv import load_dotenv
 
 
-logging.basicConfig(level=logging.ERROR)
+logger = logging.getLogger(__file__)
 
 
 def create_verdict_message(user_name, lesson_title, lesson_url, is_negative):
@@ -15,7 +15,7 @@ def create_verdict_message(user_name, lesson_title, lesson_url, is_negative):
     result = '❌ Работа не принята.' if is_negative else '✅ Работа принята!'
     verdict = ('К сожалению, работа не принята и требует улучшений.'
                if is_negative else 'Работа принята!')
-    
+
     verdict_message = (f'{result}\n\n{user_name}, преподаватель проверил урок: '
             f'"{lesson_title}"\n🔗 {lesson_url}\n{verdict}')
 
@@ -49,6 +49,8 @@ def send_notification_to_tg(response_content, bot, chat_id, user_name):
 
 def main():
     """Запускает бота и бесконечный цикл проверки новых работ."""
+    logging.basicConfig(level=logging.ERROR)
+
     load_dotenv()
 
     devman_token = os.environ['DEVMAN_TOKEN']
@@ -84,12 +86,12 @@ def main():
 
             connection_retry_count = 0
 
-        except requests.Timeout:
-            logging.info('Request timed out during polling')
+        except requests.ReadTimeout:
+            pass
 
         except requests.exceptions.ConnectionError:
             connection_retry_count += 1
-            logging.error('Connection lost during polling')
+            logger.error('Connection lost during polling.')
 
             if connection_retry_count > max_retries:
                 retry_delay = min(60, connection_retry_count * 5)
