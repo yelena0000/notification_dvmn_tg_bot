@@ -1,11 +1,13 @@
 import logging
-from dotenv import load_dotenv
 import os
+import time
+
 import requests
 import telegram
+from dotenv import load_dotenv
 
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.ERROR)
 
 
 def create_verdict_message(user_name, lesson_title, lesson_url, is_negative):
@@ -31,7 +33,7 @@ def get_new_reviews(token, last_timestamp):
 
 
 def send_notification_to_tg(response_content, bot, chat_id, user_name):
-    """Отправляет сообщения в Telegram на основе полученных данных о проверках."""
+    """Обрабатывает данные о проверках и отправляет сообщения в Telegram."""
     if response_content['status'] == 'found':
         for attempt in response_content['new_attempts']:
             message = create_verdict_message(
@@ -56,24 +58,42 @@ def main():
 
     welcome_message = (
         f'👋 Привет, {user_name}! Я слежу за проверками твоих работ. '
-        f'Информацию о проверках я отправлю, когда преподаватель проверит твой урок.'
+        f'Информацию о проверках я отправлю, '
+        f'когда преподаватель проверит твой урок.'
     )
 
     bot.send_message(chat_id=tg_chat_id, text=welcome_message)
 
     last_timestamp = None
 
+    connection_retry_count = 0
+    max_retries = 5
+
     while True:
         try:
             response_content = get_new_reviews(devman_token, last_timestamp)
-            send_notification_to_tg(response_content, bot, tg_chat_id, user_name)
+            send_notification_to_tg(
+                response_content,
+                bot,
+                tg_chat_id,
+                user_name
+            )
             last_timestamp = response_content.get('timestamp_to_request')
 
+            connection_retry_count = 0
+
         except requests.Timeout:
-            logging.error('Request timed out during polling')
+            logging.info('Request timed out during polling')
 
         except requests.exceptions.ConnectionError:
+            connection_retry_count += 1
             logging.error('Connection lost during polling')
+
+            if connection_retry_count > max_retries:
+                retry_delay = min(60, connection_retry_count * 5)
+                time.sleep(retry_delay)
+            else:
+                time.sleep(5)
 
 
 if __name__ == '__main__':
