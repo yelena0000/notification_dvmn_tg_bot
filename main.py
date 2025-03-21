@@ -7,7 +7,15 @@ import telegram
 from dotenv import load_dotenv
 
 
-logger = logging.getLogger(__file__)
+class TelegramLogsHandler(logging.Handler):
+    def __init__(self, bot, chat_id):
+        super().__init__()
+        self.bot = bot
+        self.chat_id = chat_id
+
+    def emit(self, record):
+        log_entry = self.format(record)
+        self.bot.send_message(chat_id=self.chat_id, text=log_entry)
 
 
 def create_verdict_message(user_name, lesson_title, lesson_url, is_negative):
@@ -49,8 +57,6 @@ def send_notification_to_tg(response_content, bot, chat_id, user_name):
 
 def main():
     """Запускает бота и бесконечный цикл проверки новых работ."""
-    logging.basicConfig(level=logging.ERROR)
-
     load_dotenv()
 
     devman_token = os.environ['DEVMAN_TOKEN']
@@ -72,6 +78,10 @@ def main():
 
     connection_retry_count = 0
     max_retries = 5
+
+    logger = logging.getLogger(__file__)
+    logger.setLevel(logging.WARNING)
+    logger.addHandler(TelegramLogsHandler(bot, tg_chat_id))
 
     while True:
         try:
@@ -98,6 +108,10 @@ def main():
                 time.sleep(retry_delay)
             else:
                 time.sleep(5)
+
+        except Exception as e:
+            logger.exception('An unexpected error occurred:')
+            time.sleep(5)
 
 
 if __name__ == '__main__':
